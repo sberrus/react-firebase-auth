@@ -3,7 +3,7 @@
 
   También hay que acordarse de crear el script para la configuración de Firebase. Este script lo encontramos en "Configuracion del proyecto > General" Este script lo tenemos que incorporar en firebase.js.
  */
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-dom";
 import Navbar from './components/Navbar'
 import Login from './components/Login'
 function App() {
@@ -23,6 +23,7 @@ function App() {
             <Route path="/login">
               <Login />
             </Route>
+            <Redirect to="/"/>
           </Switch>
         </div>
       </div>

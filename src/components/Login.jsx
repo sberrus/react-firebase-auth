@@ -1,12 +1,15 @@
 import React, { useState } from 'react'
-import { auth } from "../firebase"
+import { db, auth } from "../firebase"
+//importamos withRouter para controlar las redirecciones.
+import { withRouter } from 'react-router-dom'
 
-const Login = () => {
+//para trabajar con las redirecciones tenemos que hacer uso de la prop history por lo tanto es necesario llamar a las props en el componente.
+const Login = (props) => {
 
     const [email, setEmail] = useState("");
     const [pass, setPass] = useState("");
     const [error, setError] = useState(null);
-    const [esRegistro, setEsRegistro] = useState(true);
+    const [esRegistro, setEsRegistro] = useState(false);
 
     const procesarDatos = (e) => {
         e.preventDefault();
@@ -25,30 +28,54 @@ const Login = () => {
 
         if (esRegistro) {
             registrar();
+        } else {
+            login();
         }
-        console.log("correcto")
-
         setEmail("");
         setPass("");
-        setError("");
+        setError(null);
     }
+
+    const login = React.useCallback(async () => {
+        try {
+            await auth.signInWithEmailAndPassword(email, pass);
+            //accedemos a la prop history y a su función [push("/ruta")], para redirigir
+            //a los usuarios a la ruta determinada.
+            props.history.push("/admin")
+        } catch (error) {
+            console.log(error);
+            if (error.code === "auth/user-not-found") {
+                setError("Usuario no registrado");
+                return
+            }
+            if (error.code === "auth/wrong-password") {
+                setError("Contraseña Incorrecta");
+                return
+            }
+            setError("Error al acceder a la cuenta")
+        }
+    }, [email, pass, props.history])
 
     const registrar = React.useCallback(async () => {
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
             console.log(res)
+            await db.collection("usuarios").doc(res.user.email).set({
+                email: res.user.email,
+                uid: res.user.uid
+            })
+            props.history.push("/admin")
         } catch (error) {
             console.log(error);
-            if(error.code === "auth/email-already-in-use"){
+            if (error.code === "auth/email-already-in-use") {
                 setError("Usuario ya registrado");
             }
-            if(error.code === "auth/invalid-email"){
+            if (error.code === "auth/invalid-email") {
                 setError("Formato de email no válido")
             }
 
         }
-    }, [email, pass])
-
+    }, [email, pass, props.history])
 
     return (
         <div className="mt-5">
@@ -86,8 +113,10 @@ const Login = () => {
                             className="btn btn-dark btn-block col-12 mb-1"
                             type="submit"
                         >
-                            Registrarse
-                            </button>
+                            {
+                                esRegistro ? "Registrarse" : "Acceder"
+                            }
+                        </button>
                         <button
                             className="btn btn-info btn-sm col-12"
                             type="button"
@@ -103,4 +132,4 @@ const Login = () => {
     )
 }
 
-export default Login
+export default withRouter(Login)
