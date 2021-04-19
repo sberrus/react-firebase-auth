@@ -59,7 +59,6 @@ const Login = (props) => {
     const registrar = React.useCallback(async () => {
         try {
             const res = await auth.createUserWithEmailAndPassword(email, pass);
-            console.log(res)
             await db.collection("usuarios").doc(res.user.email).set({
                 email: res.user.email,
                 uid: res.user.uid
