@@ -1,11 +1,10 @@
-import React, { useEffect, useState } from 'react'
-import { auth } from '../firebase'
-import { withRouter } from "react-router-dom"
+import React, { useEffect, useState } from "react";
+import { auth } from "../firebase";
+import { withRouter } from "react-router-dom";
+import Firestore from "./Firestore";
 
 const Admin = (props) => {
-
-    const [user, setUser] = useState(null)
-
+    const [user, setUser] = useState(null);
 
     //lógica para rutas protegidas.
     /*
@@ -18,17 +17,18 @@ const Admin = (props) => {
         if (!auth.currentUser) {
             props.history.push("/login");
         } else {
-            setUser(auth.currentUser.email)
+            setUser(auth.currentUser);
+            console.log(auth.currentUser);
         }
-    }, [user, props.history])
+    }, [user, props.history]);
 
     return (
         <div>
             <h2>Ruta Protegida</h2>
             {/* Se comprueba que exista el valor de user para poder mostrarlo */}
-            <h4>usuario {user && user}</h4>
+            {user && <Firestore user={user} />}
         </div>
-    )
-}
+    );
+};
 
-export default withRouter(Admin)
+export default withRouter(Admin);
