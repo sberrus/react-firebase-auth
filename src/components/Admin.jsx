@@ -18,7 +18,6 @@ const Admin = (props) => {
             props.history.push("/login");
         } else {
             setUser(auth.currentUser);
-            console.log(auth.currentUser);
         }
     }, [user, props.history]);
 
