@@ -1,6 +1,9 @@
 import React from "react";
 import { db } from "../firebase";
 
+import moment from "moment"; //importamos moment.js
+import "moment/locale/es"; //Configuramos moment.js en español
+
 const Firestore = (props) => {
     const [tareas, setTareas] = React.useState([]);
     const [tarea, setTarea] = React.useState("");
@@ -12,7 +15,6 @@ const Firestore = (props) => {
             try {
                 const data = await db.collection(props.user.uid).get();
                 const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-                console.log(arrayData);
                 setTareas(arrayData);
             } catch (error) {
                 console.log(error);
@@ -20,7 +22,7 @@ const Firestore = (props) => {
         };
 
         obtenerDatos();
-    }, []);
+    }, [props.user.uid]);
 
     const agregar = async (e) => {
         e.preventDefault();
@@ -74,7 +76,9 @@ const Firestore = (props) => {
             await db.collection(props.user.uid).doc(id).update({
                 name: tarea,
             });
-            const arrayEditado = tareas.map((item) => (item.id === id ? { id: item.id, fecha: item.fecha, name: tarea } : item));
+            const arrayEditado = tareas.map((item) =>
+                item.id === id ? { id: item.id, fecha: item.fecha, name: tarea } : item
+            );
             setTareas(arrayEditado);
             setModoEdicion(false);
             setTarea("");
@@ -90,8 +94,17 @@ const Firestore = (props) => {
                 <div className="col-lg-8">
                     <h3>{modoEdicion ? "Editar Tarea" : "Agregar Tarea"}</h3>
                     <form onSubmit={modoEdicion ? editar : agregar}>
-                        <input type="text" placeholder="Ingrese tarea" className="form-control mb-2" onChange={(e) => setTarea(e.target.value)} value={tarea} />
-                        <button className={modoEdicion ? "btn btn-warning btn-block" : "btn btn-dark btn-block"} type="submit">
+                        <input
+                            type="text"
+                            placeholder="Ingrese tarea"
+                            className="form-control mb-2"
+                            onChange={(e) => setTarea(e.target.value)}
+                            value={tarea}
+                        />
+                        <button
+                            className={modoEdicion ? "btn btn-warning btn-block" : "btn btn-dark btn-block"}
+                            type="submit"
+                        >
                             {modoEdicion ? "Editar" : "Agregar"}
                         </button>
                     </form>
@@ -101,12 +114,27 @@ const Firestore = (props) => {
                     <ul className="list-group">
                         {tareas.map((item) => (
                             <li className="list-group-item" key={item.id}>
-                                {item.name}
+                                {/*
+                                    USANDO MOMENT JS PARA LAS FECHAS
+                                */}
+                                {item.name} -{" "}
+                                {
+                                    moment(item.fecha).format(
+                                        "LLL"
+                                    ) /*enviamos el valor UNIX como argumento al método moment(UNIX) y le damos un formato con el método format() ESTOS FORMATOS SE ENCUENTRAN EN LA DOCUMENTACIÓN DE LA LIBRERIA.*/
+                                }
+                                {/*********************************************/}
                                 <div className="float-end">
-                                    <button className="btn btn-danger btn-sm float-right me-2" onClick={() => eliminar(item.id)}>
+                                    <button
+                                        className="btn btn-danger btn-sm float-right me-2"
+                                        onClick={() => eliminar(item.id)}
+                                    >
                                         Eliminar
                                     </button>
-                                    <button className="btn btn-warning btn-sm float-right mr-2" onClick={() => activarEdicion(item)}>
+                                    <button
+                                        className="btn btn-warning btn-sm float-right mr-2"
+                                        onClick={() => activarEdicion(item)}
+                                    >
                                         Editar
                                     </button>
                                 </div>
