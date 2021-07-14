@@ -8,6 +8,7 @@ import { BrowserRouter as Router, Switch, Route, Redirect } from "react-router-d
 import Navbar from "./components/Navbar";
 import Login from "./components/Login";
 import Admin from "./components/Admin";
+import Resetpassword from "./components/resetpassword";
 import { auth } from "./firebase";
 import { useEffect, useState } from "react";
 
@@ -44,6 +45,9 @@ function App() {
                         </Route>
                         <Route path="/login">
                             <Login />
+                        </Route>
+                        <Route path="/reset-password">
+                            <Resetpassword />
                         </Route>
                         <Redirect to="/" />
                     </Switch>
