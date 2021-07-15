@@ -1,21 +1,50 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 
 import moment from "moment"; //importamos moment.js
 import "moment/locale/es"; //Configuramos moment.js en español
 
 const Firestore = (props) => {
-    const [tareas, setTareas] = React.useState([]);
-    const [tarea, setTarea] = React.useState("");
-    const [modoEdicion, setModoEdicion] = React.useState(false);
-    const [id, setId] = React.useState("");
+    const [tareas, setTareas] = useState([]);
+    const [tarea, setTarea] = useState("");
+    const [modoEdicion, setModoEdicion] = useState(false);
+    const [id, setId] = useState("");
 
-    React.useEffect(() => {
+    const [ultimo, setUltimo] = useState(null);
+    const [desactivar, setDesactivar] = useState(false);
+
+    useEffect(() => {
+        setDesactivar(true);
         const obtenerDatos = async () => {
             try {
-                const data = await db.collection(props.user.uid).get();
+                //FILTRANDO DATA PARA LAS CONSULTAS:
+                const data = await db
+                    .collection(props.user.uid)
+                    .limit(3) //Este método sirve para limitar la cantidad de elementos que devolverá la consulta.
+                    .orderBy("fecha", "desc") //Este método sirve para ordenar los elementos tanto de manera ascendente como descendente, tomando en cuenta la llave que utilizará como filtro.
+                    /*
+                    -   Se envia como argumento la "llave" que se desea ordenar.
+                    -   En este ejemplo estamos pidiendo que ordene los elementos que reciba de la "llave" fecha.
+                    -   Este ordena de manera predeterminada de menor a mayor poniendo de primeros los simbolos, luego los números, luego las mayúsculas y de último las minúsuclas. Siempre obedeciendo el orden de la primera letra del primer elemento.
+                    -   ESTE MÉTODO RECIBE OTRO ARGUMENTO INDICANDO SI SE DESEA ORDENAR DE MAYOR A MENOR ("desc"); O DE MENOR A MAYOR (DEFAULT) COMO SE LE INDIQUE.
+                    */
+                    .get();
                 const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+                setUltimo(data.docs[data.docs.length - 1]);
                 setTareas(arrayData);
+
+                const query = await db
+                    .collection(props.user.uid)
+                    .limit(3)
+                    .orderBy("fecha", "desc")
+                    .startAfter(data.docs[data.docs.length - 1])
+                    .get();
+                if (query.empty) {
+                    console.log("no hay mas documentos");
+                    setDesactivar(true);
+                } else {
+                    setDesactivar(false);
+                }
             } catch (error) {
                 console.log(error);
             }
@@ -23,6 +52,30 @@ const Firestore = (props) => {
 
         obtenerDatos();
     }, [props.user.uid]);
+
+    const siguiente = async () => {
+        try {
+            const data = await db.collection(props.user.uid).limit(3).orderBy("fecha", "desc").startAfter(ultimo).get();
+            const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+            setUltimo(data.docs[data.docs.length - 1]);
+            setTareas([...tareas, ...arrayData]);
+
+            const query = await db
+                .collection(props.user.uid)
+                .limit(3)
+                .orderBy("fecha", "desc")
+                .startAfter(data.docs[data.docs.length - 1])
+                .get();
+            if (query.empty) {
+                console.log("no hay mas documentos");
+                setDesactivar(true);
+            } else {
+                setDesactivar(false);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     const agregar = async (e) => {
         e.preventDefault();
@@ -113,7 +166,7 @@ const Firestore = (props) => {
                     <h3>Lista de tareas</h3>
                     <ul className="list-group">
                         {tareas.map((item) => (
-                            <li className="list-group-item" key={item.id}>
+                            <li className="list-group-item" key={item.fecha}>
                                 {/*
                                     USANDO MOMENT JS PARA LAS FECHAS
                                 */}
@@ -141,6 +194,17 @@ const Firestore = (props) => {
                             </li>
                         ))}
                     </ul>
+                    {!desactivar && (
+                        <button
+                            className="btn btn-info btn-block mt-2 col-12 btn-sm"
+                            onClick={() => {
+                                siguiente();
+                            }}
+                            disabled={desactivar}
+                        >
+                            Ver más
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
