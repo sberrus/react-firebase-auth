@@ -20,7 +20,7 @@ const Firestore = (props) => {
                 //FILTRANDO DATA PARA LAS CONSULTAS:
                 const data = await db
                     .collection(props.user.uid)
-                    .limit(3) //Este método sirve para limitar la cantidad de elementos que devolverá la consulta.
+                    .limit(10) //Este método sirve para limitar la cantidad de elementos que devolverá la consulta.
                     .orderBy("fecha", "desc") //Este método sirve para ordenar los elementos tanto de manera ascendente como descendente, tomando en cuenta la llave que utilizará como filtro.
                     /*
                     -   Se envia como argumento la "llave" que se desea ordenar.
@@ -37,7 +37,7 @@ const Firestore = (props) => {
                     .collection(props.user.uid)
                     .limit(3)
                     .orderBy("fecha", "desc")
-                    .startAfter(data.docs[data.docs.length - 1])
+                    .startAfter(data.docs[data.docs.length - 1]) //Indica el punto de inicio definido para la consulta. Los resultados que buscará empezaran desde este punto.
                     .get();
                 if (query.empty) {
                     console.log("no hay mas documentos");
@@ -144,7 +144,7 @@ const Firestore = (props) => {
     return (
         <div>
             <div className="row">
-                <div className="col-lg-8">
+                <div className="col-lg-12">
                     <h3>{modoEdicion ? "Editar Tarea" : "Agregar Tarea"}</h3>
                     <form onSubmit={modoEdicion ? editar : agregar}>
                         <input
@@ -162,7 +162,7 @@ const Firestore = (props) => {
                         </button>
                     </form>
                 </div>
-                <div className="col-lg-4">
+                <div className="col-lg-12 m-auto">
                     <h3>Lista de tareas</h3>
                     <ul className="list-group">
                         {tareas.map((item) => (

@@ -33,7 +33,7 @@ function App() {
     return firebaseUser !== false ? (
         //Usando router para configurar las rutas protegidas
         <Router>
-            <div className="container p-0">
+            <div className="container-fluid p-0">
                 <Navbar firebaseUser={firebaseUser} />
                 <div className="container">
                     <Switch>
