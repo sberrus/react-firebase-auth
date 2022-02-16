@@ -5,210 +5,203 @@ import moment from "moment"; //importamos moment.js
 import "moment/locale/es"; //Configuramos moment.js en español
 
 const Firestore = (props) => {
-    const [tareas, setTareas] = useState([]);
-    const [tarea, setTarea] = useState("");
-    const [modoEdicion, setModoEdicion] = useState(false);
-    const [id, setId] = useState("");
+	const [tareas, setTareas] = useState([]);
+	const [tarea, setTarea] = useState("");
+	const [modoEdicion, setModoEdicion] = useState(false);
+	const [id, setId] = useState("");
 
-    const [ultimo, setUltimo] = useState(null);
-    const [desactivar, setDesactivar] = useState(false);
+	const [ultimo, setUltimo] = useState(null);
+	const [desactivar, setDesactivar] = useState(false);
 
-    useEffect(() => {
-        setDesactivar(true);
-        const obtenerDatos = async () => {
-            try {
-                //FILTRANDO DATA PARA LAS CONSULTAS:
-                const data = await db
-                    .collection(props.user.uid)
-                    .limit(10) //Este método sirve para limitar la cantidad de elementos que devolverá la consulta.
-                    .orderBy("fecha", "desc") //Este método sirve para ordenar los elementos tanto de manera ascendente como descendente, tomando en cuenta la llave que utilizará como filtro.
-                    /*
-                    -   Se envia como argumento la "llave" que se desea ordenar.
-                    -   En este ejemplo estamos pidiendo que ordene los elementos que reciba de la "llave" fecha.
-                    -   Este ordena de manera predeterminada de menor a mayor poniendo de primeros los simbolos, luego los números, luego las mayúsculas y de último las minúsuclas. Siempre obedeciendo el orden de la primera letra del primer elemento.
-                    -   ESTE MÉTODO RECIBE OTRO ARGUMENTO INDICANDO SI SE DESEA ORDENAR DE MAYOR A MENOR ("desc"); O DE MENOR A MAYOR (DEFAULT) COMO SE LE INDIQUE.
-                    */
-                    .get();
-                const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-                setUltimo(data.docs[data.docs.length - 1]);
-                setTareas(arrayData);
+	useEffect(() => {
+		setDesactivar(true);
+		const obtenerDatos = async () => {
+			try {
+				//Referencias de los métodos para filtrar información de firestore:
+				const data = await db.collection(props.user.uid).limit(10).orderBy("fecha", "desc").get(); //limitando consulta, ordenando por fecha desc
+				const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() })); //Estructurando datos
 
-                const query = await db
-                    .collection(props.user.uid)
-                    .limit(3)
-                    .orderBy("fecha", "desc")
-                    .startAfter(data.docs[data.docs.length - 1]) //Indica el punto de inicio definido para la consulta. Los resultados que buscará empezaran desde este punto.
-                    .get();
-                if (query.empty) {
-                    console.log("no hay mas documentos");
-                    setDesactivar(true);
-                } else {
-                    setDesactivar(false);
-                }
-            } catch (error) {
-                console.log(error);
-            }
-        };
+				//Lógica para el filtrado de documentos
+				setUltimo(data.docs[data.docs.length - 1]);
+				setTareas(arrayData);
 
-        obtenerDatos();
-    }, [props.user.uid]);
+				//Nueva query
+				const query = await db
+					.collection(props.user.uid)
+					.limit(3)
+					.orderBy("fecha", "desc")
+					.startAfter(data.docs[data.docs.length - 1])
+					.get();
+				if (query.empty) {
+					console.log("no hay mas documentos");
+					setDesactivar(true);
+				} else {
+					setDesactivar(false);
+				}
+			} catch (error) {
+				console.log(error);
+			}
+		};
 
-    const siguiente = async () => {
-        try {
-            const data = await db.collection(props.user.uid).limit(3).orderBy("fecha", "desc").startAfter(ultimo).get();
-            const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-            setUltimo(data.docs[data.docs.length - 1]);
-            setTareas([...tareas, ...arrayData]);
+		obtenerDatos();
+	}, [props.user.uid]);
 
-            const query = await db
-                .collection(props.user.uid)
-                .limit(3)
-                .orderBy("fecha", "desc")
-                .startAfter(data.docs[data.docs.length - 1])
-                .get();
-            if (query.empty) {
-                console.log("no hay mas documentos");
-                setDesactivar(true);
-            } else {
-                setDesactivar(false);
-            }
-        } catch (error) {
-            console.log(error);
-        }
-    };
+	const siguiente = async () => {
+		try {
+			const data = await db.collection(props.user.uid).limit(3).orderBy("fecha", "desc").startAfter(ultimo).get();
+			const arrayData = data.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+			setUltimo(data.docs[data.docs.length - 1]);
+			setTareas([...tareas, ...arrayData]);
 
-    const agregar = async (e) => {
-        e.preventDefault();
+			const query = await db
+				.collection(props.user.uid)
+				.limit(3)
+				.orderBy("fecha", "desc")
+				.startAfter(data.docs[data.docs.length - 1])
+				.get();
+			if (query.empty) {
+				console.log("no hay mas documentos");
+				setDesactivar(true);
+			} else {
+				setDesactivar(false);
+			}
+		} catch (error) {
+			console.log(error);
+		}
+	};
 
-        if (!tarea.trim()) {
-            console.log("está vacio");
-            return;
-        }
+	const agregar = async (e) => {
+		e.preventDefault();
 
-        try {
-            const nuevaTarea = {
-                name: tarea,
-                fecha: Date.now(),
-            };
-            const data = await db.collection(props.user.uid).add(nuevaTarea);
+		if (!tarea.trim()) {
+			console.log("está vacio");
+			return;
+		}
 
-            setTareas([...tareas, { ...nuevaTarea, id: data.id }]);
+		try {
+			const nuevaTarea = {
+				name: tarea,
+				fecha: Date.now(),
+			};
+			const data = await db.collection(props.user.uid).add(nuevaTarea);
 
-            setTarea("");
-        } catch (error) {
-            console.log(error);
-        }
+			setTareas([...tareas, { ...nuevaTarea, id: data.id }]);
 
-        console.log(tarea);
-    };
+			setTarea("");
+		} catch (error) {
+			console.log(error);
+		}
 
-    const eliminar = async (id) => {
-        try {
-            await db.collection(props.user.uid).doc(id).delete();
+		console.log(tarea);
+	};
 
-            const arrayFiltrado = tareas.filter((item) => item.id !== id);
-            setTareas(arrayFiltrado);
-        } catch (error) {
-            console.log(error);
-        }
-    };
+	const eliminar = async (id) => {
+		try {
+			await db.collection(props.user.uid).doc(id).delete();
 
-    const activarEdicion = (item) => {
-        setModoEdicion(true);
-        setTarea(item.name);
-        setId(item.id);
-    };
+			const arrayFiltrado = tareas.filter((item) => item.id !== id);
+			setTareas(arrayFiltrado);
+		} catch (error) {
+			console.log(error);
+		}
+	};
 
-    const editar = async (e) => {
-        e.preventDefault();
-        if (!tarea.trim()) {
-            console.log("vacio");
-            return;
-        }
-        try {
-            await db.collection(props.user.uid).doc(id).update({
-                name: tarea,
-            });
-            const arrayEditado = tareas.map((item) =>
-                item.id === id ? { id: item.id, fecha: item.fecha, name: tarea } : item
-            );
-            setTareas(arrayEditado);
-            setModoEdicion(false);
-            setTarea("");
-            setId("");
-        } catch (error) {
-            console.log(error);
-        }
-    };
+	const activarEdicion = (item) => {
+		setModoEdicion(true);
+		setTarea(item.name);
+		setId(item.id);
+	};
 
-    return (
-        <div>
-            <div className="row">
-                <div className="col-lg-12">
-                    <h3>{modoEdicion ? "Editar Tarea" : "Agregar Tarea"}</h3>
-                    <form onSubmit={modoEdicion ? editar : agregar}>
-                        <input
-                            type="text"
-                            placeholder="Ingrese tarea"
-                            className="form-control mb-2"
-                            onChange={(e) => setTarea(e.target.value)}
-                            value={tarea}
-                        />
-                        <button
-                            className={modoEdicion ? "btn btn-warning btn-block" : "btn btn-dark btn-block"}
-                            type="submit"
-                        >
-                            {modoEdicion ? "Editar" : "Agregar"}
-                        </button>
-                    </form>
-                </div>
-                <div className="col-lg-12 m-auto">
-                    <h3>Lista de tareas</h3>
-                    <ul className="list-group">
-                        {tareas.map((item) => (
-                            <li className="list-group-item" key={item.fecha}>
-                                {/*
+	const editar = async (e) => {
+		e.preventDefault();
+		if (!tarea.trim()) {
+			console.log("vacio");
+			return;
+		}
+		try {
+			await db.collection(props.user.uid).doc(id).update({
+				name: tarea,
+			});
+			const arrayEditado = tareas.map((item) =>
+				item.id === id ? { id: item.id, fecha: item.fecha, name: tarea } : item
+			);
+			setTareas(arrayEditado);
+			setModoEdicion(false);
+			setTarea("");
+			setId("");
+		} catch (error) {
+			console.log(error);
+		}
+	};
+
+	return (
+		<div>
+			<div className="row">
+				<div className="col-lg-12">
+					<h3>{modoEdicion ? "Editar Tarea" : "Agregar Tarea"}</h3>
+					<form onSubmit={modoEdicion ? editar : agregar}>
+						<input
+							type="text"
+							placeholder="Ingrese tarea"
+							className="form-control mb-2"
+							onChange={(e) => setTarea(e.target.value)}
+							value={tarea}
+						/>
+						<button
+							className={modoEdicion ? "btn btn-warning btn-block" : "btn btn-dark btn-block"}
+							type="submit"
+						>
+							{modoEdicion ? "Editar" : "Agregar"}
+						</button>
+					</form>
+				</div>
+				<div className="col-lg-12 m-auto">
+					<h3>Lista de tareas</h3>
+					<ul className="list-group">
+						{tareas.map((item) => (
+							<li className="list-group-item" key={item.fecha}>
+								{/*
                                     USANDO MOMENT JS PARA LAS FECHAS
                                 */}
-                                {item.name} -{" "}
-                                {
-                                    moment(item.fecha).format(
-                                        "LLL"
-                                    ) /*enviamos el valor UNIX como argumento al método moment(UNIX) y le damos un formato con el método format() ESTOS FORMATOS SE ENCUENTRAN EN LA DOCUMENTACIÓN DE LA LIBRERIA.*/
-                                }
-                                {/*********************************************/}
-                                <div className="float-end">
-                                    <button
-                                        className="btn btn-danger btn-sm float-right me-2"
-                                        onClick={() => eliminar(item.id)}
-                                    >
-                                        Eliminar
-                                    </button>
-                                    <button
-                                        className="btn btn-warning btn-sm float-right mr-2"
-                                        onClick={() => activarEdicion(item)}
-                                    >
-                                        Editar
-                                    </button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
-                    {!desactivar && (
-                        <button
-                            className="btn btn-info btn-block mt-2 col-12 btn-sm"
-                            onClick={() => {
-                                siguiente();
-                            }}
-                            disabled={desactivar}
-                        >
-                            Ver más
-                        </button>
-                    )}
-                </div>
-            </div>
-        </div>
-    );
+								{item.name} -{" "}
+								{
+									moment(item.fecha).format(
+										"LLL"
+									) /*enviamos el valor UNIX como argumento al método moment(UNIX) y le damos un formato con el método format() ESTOS FORMATOS SE ENCUENTRAN EN LA DOCUMENTACIÓN DE LA LIBRERIA.*/
+								}
+								{/*********************************************/}
+								<div className="float-end">
+									<button
+										className="btn btn-danger btn-sm float-right me-2"
+										onClick={() => eliminar(item.id)}
+									>
+										Eliminar
+									</button>
+									<button
+										className="btn btn-warning btn-sm float-right mr-2"
+										onClick={() => activarEdicion(item)}
+									>
+										Editar
+									</button>
+								</div>
+							</li>
+						))}
+					</ul>
+					{!desactivar && (
+						<button
+							className="btn btn-info btn-block mt-2 col-12 btn-sm"
+							onClick={() => {
+								siguiente();
+							}}
+							disabled={desactivar}
+						>
+							Ver más
+						</button>
+					)}
+				</div>
+			</div>
+		</div>
+	);
 };
 
 export default Firestore;
